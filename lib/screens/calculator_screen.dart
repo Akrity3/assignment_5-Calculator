@@ -1,34 +1,41 @@
 import 'package:flutter/material.dart';
 
-class CalculatorScreen extends StatelessWidget {
+class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
 
-  static const List<Map<String, String>> _buttons = [
-    {'label':'C',   'type': 'clear'},
-    {'label':'+/-', 'type': 'special'},
-    {'label':'%',   'type': 'operator'},
-    {'label':'÷',   'type': 'operator'},
+  @override
+  State<CalculatorScreen> createState() => _CalculatorScreenState();
+}
 
-    {'label':'7',   'type': 'number'},
-    {'label':'8',   'type': 'number'},
-    {'label':'9',   'type': 'number'},
-    {'label':'x',   'type': 'operator'},
+class _CalculatorScreenState extends State<CalculatorScreen> {
+  static const List<String> _buttons = [
+    'C',  
+    '^',  
+    '/',  
+    '<-',
 
-    {'label':'4',   'type': 'number'},
-    {'label':'5',   'type': 'number'},
-    {'label': '6',   'type': 'number'},
-    {'label':'-',   'type': 'operator'},
+    '1',  
+    '2',  
+    '3',  
+    '+',
 
-    {'label': '1',   'type': 'number'},
-    {'label': '2',   'type': 'number'},
-    {'label': '3',   'type': 'number'},
-    {'label': '+',   'type': 'operator'},
+    '4',  
+    '5',  
+    '6',  
+    '-',
 
-    {'label': '⌫',   'type': 'backspace'},
-    {'label': '0',   'type': 'number'},
-    {'label': '.',   'type': 'number'},
-    {'label': '=',   'type': 'equals'},
+    '7',  
+    '8',  
+    '9',  
+    '*',
+
+    '%',  
+    '0',  
+    '.',  
+    '=', 
   ];
+
+  String _display = '';
 
   //Colors 
   static const Color _bgColor = Color(0xFF0F0F0F);
@@ -37,38 +44,27 @@ class CalculatorScreen extends StatelessWidget {
   static const Color _specialBg= Color(0xFF2C2C2E);
   static const Color _accentOrange= Color(0xFFFF9500);
   static const Color _primaryText = Colors.white;
-  static const Color _dimText= Color(0xFF8E8E93);
+ 
 
-  Color _bgFor(String type) {
-    switch (type) {
-      case 'operator':
-      case 'equals':   
-      return _operatorBg;
-
-      case 'clear':
-      case 'backspace':
-      case 'special':  
+  Color _bgFor(String label) {
+    if (label == 'C' || label == '<-') 
       return _specialBg;
-
-      default:         
-      return _numberBg;
-    }
+    if ('+-*/%'.contains(label) || label == '/') 
+      return _operatorBg;
+    if (label == '=') 
+      return _operatorBg;
+      
+    return _numberBg;
   }
 
-  Color _fgFor(String type) {
-    switch (type) {
-      case 'operator':
-      case 'equals':   
+  Color _fgFor(String label) {
+    if (label == 'C' || label == '<-') 
+      return _accentOrange;
+    if ('+-*/%='.contains(label) || label == '/') 
       return Colors.white;
 
-      case 'clear':
-      case 'backspace':
-      return _accentOrange;
-
-      default:         
-      return _primaryText;
-    }
-    }
+    return _primaryText;
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -77,6 +73,7 @@ class CalculatorScreen extends StatelessWidget {
 
       appBar: AppBar(
         backgroundColor: _bgColor,
+
         elevation: 0,
         centerTitle: true,
         title: const Text(
@@ -90,7 +87,7 @@ class CalculatorScreen extends StatelessWidget {
       ),
 
       body: Padding(
-        padding: const EdgeInsets.fromLTRB(12, 0, 12, 12),
+        padding: const EdgeInsets.all(12),
 
         child: Column(
           children: [
@@ -98,128 +95,90 @@ class CalculatorScreen extends StatelessWidget {
             // Display
             Container(
               width: double.infinity,
-              padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 20),
+              height: 110,
+              padding: const EdgeInsets.all(12),
+              alignment: Alignment.centerRight,
 
               decoration: BoxDecoration(
                 color: const Color(0xFF1A1A1A),
-                borderRadius: BorderRadius.circular(16),
+                borderRadius: BorderRadius.circular(10), //
                 border: Border.all(
                   color: Colors.white.withOpacity(0.06),
                 ),
               ),
 
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.end,
-
-                children: [ const Text( // expression line
-                    '128 + 64',
-                    style: TextStyle(
-                      color: _dimText,
-                      fontSize: 16,
-                      fontWeight: FontWeight.w300,
-                    ),
-                  ),
-
-                  const SizedBox(height: 4),
-                  const FittedBox(  // main number
-                    fit: BoxFit.scaleDown,
-                    alignment: Alignment.centerRight,
-                    child: Text(
-                      '192',
-                      style: TextStyle(
-                        color: _primaryText,
-                        fontSize: 64,
-                        fontWeight: FontWeight.w200,
-                        letterSpacing: -2,
-                      ),
-                    ),
-                  ),
-                ],
+              child: Text(
+                _display,
+                style: const TextStyle(fontSize: 58, color: _primaryText),
               ),
+
             ),
 
-            const SizedBox(height: 12),
+            const SizedBox(height: 23), //
 
             //Button grid
             Expanded(
-              child: GridView.builder(
-                physics: const NeverScrollableScrollPhysics(),
-                gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(
-                  crossAxisCount: 4,
-                  mainAxisSpacing: 10,
-                  crossAxisSpacing: 10,
-                  childAspectRatio: 0.85,
-                ),
-                itemCount: _buttons.length,
-                itemBuilder: (context, index) {
-                  final btn   = _buttons[index];
-                  final label = btn['label']!;
-                  final type  = btn['type']!;
-                  return _CalcButton(
-                    label: label,
-                    bgColor: _bgFor(type),
-                    fgColor: _fgFor(type),
-                    isOperator: type == 'operator' || type == 'equals',
-                  );
-                },
+              child: GridView.count(
+                crossAxisCount: 4,
+                mainAxisSpacing: 12,
+                crossAxisSpacing: 12,
+                childAspectRatio: 0.77,
+                children: [
+                  for (final label in _buttons)
+                    ElevatedButton(
+                      onPressed: () {
+                        if (label == 'C') {
+                          setState(() => _display = '');
+                        } else if (label == '<-') {
+                          if (_display.isNotEmpty) {
+                            setState(() {
+                              _display = _display.substring(
+                                0,
+                                _display.length - 1,
+                              );
+                            });
+                          }
+                        } else if (label == '=') {
+                          // TODO
+
+                        } else if ('+-*/%'.contains(label) || label == '/') {
+                          // TODO
+
+                        } else {
+                          setState(() => _display += label);
+                        }
+                      },
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: _bgFor(label),
+                        foregroundColor: _fgFor(label),
+                        elevation: label == '=' ||
+                                '+-*/%'.contains(label) ||
+                                label == '/'
+                            ? 4
+                            : 2,
+                        shadowColor: label == '=' ||
+                                '+-*/%'.contains(label) ||
+                                label == '/'
+                            ? _accentOrange.withOpacity(0.30)
+                            : Colors.black.withOpacity(0.4),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(20),
+                        ),
+                      ),
+                      child: Text(
+                        label,
+                        style: const TextStyle(fontSize: 30),
+                      ),
+                    ),
+                ],
               ),
             ),
             ],
 
-        ),),
-    );
-
-  }
-}
-
-// button 
-class _CalcButton extends StatelessWidget {
-  final String label;
-  final Color bgColor;
-  final Color fgColor;
-  final bool isOperator;
-
-  const _CalcButton({
-    required this.label,
-    required this.bgColor,
-    required this.fgColor,
-    this.isOperator = false,
-  });
-
-
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-
-      decoration: BoxDecoration(
-        color: bgColor,
-        borderRadius: BorderRadius.circular(14),
-        boxShadow: [
-          BoxShadow(
-            color: isOperator
-                ? _CalcButton._orangeGlow
-                : Colors.black.withOpacity(0.4),
-            blurRadius: 6,
-            offset: const Offset(0, 3),
-          ),
-        ],
-      ),
-
-      child: Center(
-        child: Text(
-          label,
-          style: TextStyle(
-            color: fgColor,
-            fontSize: label == '⌫' ? 24 : 28,
-            fontWeight: isOperator ? FontWeight.w500 : FontWeight.w300,
-          ),
         ),
       ),
-      
     );
-  }
 
-  static final Color _orangeGlow =
-      const Color(0xFFFF9500).withOpacity(0.30);
+  }
 }
+

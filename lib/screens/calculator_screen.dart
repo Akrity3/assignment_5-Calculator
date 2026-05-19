@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'dart:math';
 
 class CalculatorScreen extends StatefulWidget {
   const CalculatorScreen({super.key});
@@ -37,6 +38,11 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
   String _display = '';
 
+  String _firstNumber  = '';   // stores first number user types
+  String _operator     = '';   // stores the operator (+, -, *, etc.)
+  String _secondNumber = '';   // stores second number user types
+  bool   _hasOperator  = false; // tracks whether operator has been pressed
+
   //Colors 
   static const Color _bgColor = Color(0xFF0F0F0F);
   static const Color _numberBg = Color(0xFF1E1E1E);
@@ -65,6 +71,124 @@ class _CalculatorScreenState extends State<CalculatorScreen> {
 
     return _primaryText;
   }
+
+  // buttons behaviours
+  void _onButtonPressed(String label) {
+    setState(() {
+
+      // ── Clear: resets everything ──
+      if (label == 'C') {
+        _firstNumber  = '';
+        _operator     = '';
+        _secondNumber = '';
+        _hasOperator  = false;
+        _display      = '';
+        return;
+      }
+
+      //Backspace
+      if (label == '<-') {
+        if (_display.isNotEmpty) {
+          final String removed = _display[_display.length - 1];
+
+          // if the removed character was the operator, reset operator state
+          if (removed == _operator) {
+            _operator    = '';
+            _hasOperator = false;
+          } else if (_hasOperator) {
+            // removing from second number
+            _secondNumber = _secondNumber.isNotEmpty
+                ? _secondNumber.substring(0, _secondNumber.length - 1)
+                : '';
+          } else {
+            // removing from first number
+            _firstNumber = _firstNumber.isNotEmpty
+                ? _firstNumber.substring(0, _firstNumber.length - 1)
+                : '';
+          }
+          _display = _display.substring(0, _display.length - 1);
+        }
+        return;
+      }
+
+      // Operator pressed (+, -, *, /, %, ^) 
+      if ('+-*/^%'.contains(label)) {
+        // only set operator if first number exists and no operator set yet
+        if (_firstNumber.isNotEmpty && _operator.isEmpty) {
+          _operator    = label;
+          _hasOperator = true;
+          _display     += label;
+        }
+        return;
+      }
+
+      //Equals
+      if (label == '=') {
+        // do nothing if any part is missing
+        if (_firstNumber.isEmpty || _operator.isEmpty || _secondNumber.isEmpty) {
+          return;
+        }
+
+        final double a = double.parse(_firstNumber);
+        final double b = double.parse(_secondNumber);
+        double result  = 0;
+
+        switch (_operator) {
+          case '+': result = a + b;     
+          break;
+
+          case '-': result = a - b;                        
+          break;
+          case '*': result = a * b;                        
+          break;
+
+          case '/': result = b != 0 ? a / b : 0;          
+          break; // prevent divide by zero
+
+          case '%': result = a % b;                        
+          break;
+
+          case '^': result = pow(a, b).toDouble();         
+          break; 
+        }
+
+        // show as integer if result has no decimal part 
+        final String resultStr = result == result.truncateToDouble()
+            ? result.toInt().toString()
+            : result.toString();
+
+        // display
+        _display      = '$_firstNumber$_operator$_secondNumber=$resultStr';
+
+        // store result as first number so user can chain calculations
+        _firstNumber  = resultStr;
+        _operator     = '';
+        _secondNumber = '';
+        _hasOperator  = false;
+        return;
+      }
+
+      // Number or dot pressed 
+
+      // prevent multiple dots in the same number
+      if (label == '.') {
+        if (_hasOperator) {
+          if (_secondNumber.contains('.')) return;
+        } else {
+          if (_firstNumber.contains('.')) return;
+        }
+      }
+
+      // append to correct number based on whether operator is set
+      if (_hasOperator) {
+        _secondNumber += label;
+      } else {
+        _firstNumber  += label;
+      }
+      _display += label;
+    });
+  }
+
 
   @override
   Widget build(BuildContext context) {
